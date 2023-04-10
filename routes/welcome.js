@@ -3,12 +3,14 @@ const router = express.Router()
 const welcomeSchema = require("../models/welcome")
 const bodyParser = require("body-parser")
 const welcome = require('../models/welcome')
+const {getDataById}=require("../modules/get-cache-by-id")
+const throttle=require("../middleware/throttling")
 
 module.exports = router
 
 router.use(bodyParser.json())
 
-router.post('/', async (req, res) => {
+router.post('/',throttle, async (req, res) => {
     const { guildId, channelId, content, role } = req.body
     try {
         await welcomeSchema.findOne({ Guild: guildId }).then(async (data) => {
@@ -19,7 +21,17 @@ router.post('/', async (req, res) => {
                     Content: content,
                     Role: role
                 }).then((result) => {
-                    if (result) res.status(200).send({ message: "Lưu thành công" })
+                    if (result) {
+                        res.status(200).send({ message: "Lưu thành công" })
+                        const key = `guildid:${result.GuildId}`;
+                        const value = JSON.stringify(result.toObject());
+
+                        client.set(key, value, (err, result) => {
+                            if (err) {
+                                console.error(err);
+                            }
+                        });
+                    }
                 })
             }
         })
@@ -29,17 +41,6 @@ router.post('/', async (req, res) => {
     }
 })
 
-router.get('/:guildid', async (req, res) => {
-    const guildId = req.params.guildid
-    try {
-        welcomeSchema.findOne({ Guild: guildId })
-            .then((data) => {
-                if (data)
-                    return res.status(200).send(data)
-                else return res.status(404).send({ message: "Not Found" })
-            })
-    } catch (error) {
-        console.error(error)
-        res.status(500).send("Internal Server Error")
-    }
+router.get('/:guildid', throttle, async (req, res) => {
+    getDataById(req, res, welcomeSchema)
 })

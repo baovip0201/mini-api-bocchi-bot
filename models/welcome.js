@@ -5,6 +5,6 @@ let welcomeSchema=new Schema({
     Channel: String,
     Content: String,
     Role: String
-})
+},{versionKey: false})
 
 module.exports = model("welcome", welcomeSchema)
