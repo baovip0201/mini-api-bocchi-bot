@@ -13,7 +13,12 @@ router.post('/', throttle, async (req, res) => {
     const { guildId, guildName, categoryId, categoryName, channelId, channelName, userId, userTag, messages } = req.body
     const now=new Date()
     const timetamp=`${now.getHours()}:${now.getMinutes()} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`
-    const content = { userId, userTag, messages, timetamp }
+    const content = { 
+        userId: userId, 
+        userTag: userTag, 
+        message: messages, 
+        timetamp: timetamp 
+    }
     try {
         conversationSchema.findOne(
             { 'Guild.guildId': guildId, 'Category.categoryId': categoryId, 'Channel.channelId': channelId },
