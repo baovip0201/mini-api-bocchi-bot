@@ -10,10 +10,10 @@ module.exports = router
 router.use(bodyParser.json())
 
 router.post('/', throttle, async (req, res) => {
-    const { guildId, guildName, categoryId, categoryName, channelId, channelName, userId, userTag, message } = req.body
+    const { guildId, guildName, categoryId, categoryName, channelId, channelName, userId, userTag, messages } = req.body
     const now=new Date()
     const timetamp=`${now.getHours()}:${now.getMinutes()} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`
-    const content = { userId, userTag, message, timetamp }
+    const content = { userId, userTag, messages, timetamp }
     try {
         conversationSchema.findOne(
             { 'Guild.guildId': guildId, 'Category.categoryId': categoryId, 'Channel.channelId': channelId },
