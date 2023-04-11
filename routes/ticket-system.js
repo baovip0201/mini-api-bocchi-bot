@@ -75,7 +75,7 @@ router.get('/:guildid', throttle, async (req, res) => {
 })
 
 router.delete('/:guildid', throttle, async (req, res) =>{
-    const guildId= req.body
+    const guildId= req.params.guildid
     ticketSchema.deleteMany({Guild: guildId}).then((err, data)=>{
         res.status(200).send({message: 'Đã loại bỏ hệ thống ticket'})
     })
