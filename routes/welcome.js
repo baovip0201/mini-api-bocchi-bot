@@ -2,7 +2,6 @@ const express = require('express')
 const router = express.Router()
 const welcomeSchema = require("../models/welcome")
 const bodyParser = require("body-parser")
-const welcome = require('../models/welcome')
 const {getDataById}=require("../modules/get-cache-by-id")
 const throttle=require("../middleware/throttling")
 
@@ -23,14 +22,14 @@ router.post('/',throttle, async (req, res) => {
                 }).then((result) => {
                     if (result) {
                         res.status(200).send({ message: "Lưu thành công" })
-                        const key = `guildid:${result.GuildId}`;
-                        const value = JSON.stringify(result.toObject());
+                        // const key = `guildid:${result.GuildId}`;
+                        // const value = JSON.stringify(result.toObject());
 
-                        client.set(key, value, (err, result) => {
-                            if (err) {
-                                console.error(err);
-                            }
-                        });
+                        // client.set(key, value, (err, result) => {
+                        //     if (err) {
+                        //         console.error(err);
+                        //     }
+                        // });
                     }
                 })
             }
