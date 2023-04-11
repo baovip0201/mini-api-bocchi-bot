@@ -2,41 +2,37 @@ const express = require('express')
 const router = express.Router()
 const welcomeSchema = require("../models/welcome")
 const bodyParser = require("body-parser")
-const {getDataById}=require("../modules/get-cache-by-id")
-const throttle=require("../middleware/throttling")
+const {getDataById} = require("../modules/get-cache-by-id")
+const throttle = require("../middleware/throttling")
 
 module.exports = router
 
 router.use(bodyParser.json())
 
-router.post('/',throttle, async (req, res) => {
+router.post('/', throttle, async (req, res) => {
     const { guildId, channelId, content, role } = req.body
-    try {
-        await welcomeSchema.findOne({ Guild: guildId }).then(async (data) => {
-            if (!data) {
-                await welcomeSchema.create({
-                    Guild: guildId,
-                    Channel: channelId,
-                    Content: content,
-                    Role: role
-                }).then((result) => {
-                    if (result) {
-                        res.status(200).send({ message: "Lưu thành công" })
-                        // const key = `guildid:${result.GuildId}`;
-                        // const value = JSON.stringify(result.toObject());
+    if (!guildId || !channelId || !content || !role) {
+        return res.status(400).send({ message: "Bad Request" })
+    }
 
-                        // client.set(key, value, (err, result) => {
-                        //     if (err) {
-                        //         console.error(err);
-                        //     }
-                        // });
-                    }
-                })
-            }
+    try {
+        const data = await welcomeSchema.findOne({ Guild: guildId })
+        if (data) {
+            return res.status(409).send({ message: 'Đã tồn tại' })
+        }
+
+        const result = await welcomeSchema.create({
+            Guild: guildId,
+            Channel: channelId,
+            Content: content,
+            Role: role
         })
+        if (result) {
+            return res.status(201).send({ message: "Lưu thành công" })
+        }
     } catch (error) {
         console.error(error)
-        res.status(500).send("Internal Server Error")
+        res.status(500).send({ message: "Internal Server Error" })
     }
 })
 

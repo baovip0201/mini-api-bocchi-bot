@@ -2,81 +2,66 @@ const express = require('express')
 const router = express.Router()
 const ticketSchema = require("../models/ticket-system")
 const bodyParser = require("body-parser")
-const {getDataById}=require("../modules/get-cache-by-id")
-const throttle=require("../middleware/throttling")
-
-module.exports = router
+const {getDataById} = require("../modules/get-cache-by-id")
 
 router.use(bodyParser.json())
 
-router.post('/',throttle, async (req, res) => {
+router.post('/', async (req, res) => {
     const { guildId, channelId, ticket } = req.body
     try {
-        ticketSchema.findOne({ Guild: guildId}).then((data)=>{
-            if(!data){
-                ticketSchema.create({
-                    Guild: guildId,
-                    Channel: channelId,
-                    Ticket: ticket
-                }).then((result) => {
-                    if (result) {
-                        res.status(200).send({ message: "Lưu thành công hệ thống ticket" })
-                        // const key = `guildid:${result.GuildId}`;
-                        // const value = JSON.stringify(result.toObject());
-        
-                        // client.set(key, value, (err, result) => {
-                        //     if (err) {
-                        //         console.error(err);
-                        //     }
-                        // });
-                    }
-                })
-            }else return res.status(401).send({message: 'Mỗi guildId chỉ tồn tại tối đa 1 hệ thống ticket'})
+        const existingTicketSystem = await ticketSchema.findOne({ Guild: guildId })
+        if (existingTicketSystem) {
+            return res.status(409).send({ message: 'A ticket system already exists for this guild' })
+        }
+        const newTicketSystem = await ticketSchema.create({
+            Guild: guildId,
+            Channel: channelId,
+            Ticket: ticket
         })
+        if (newTicketSystem) {
+            res.status(201).send({ message: "Ticket system created successfully" })
+        } else {
+            res.status(500).send({ message: "Internal Server Error" })
+        }
     } catch (error) {
         console.error(error)
-        res.status(500).send("Internal Server Error")
+        res.status(500).send({ message: "Internal Server Error" })
     }
 })
 
-router.post('/:guildid', throttle, async (req, res) => {
+router.put('/:guildid', async (req, res) => {
     const { ticket } = req.body
     const guildId = req.params.guildid
     try {
-        ticketSchema.findOne({ Guild: guildId })
-            .then((data) => {
-                if (data) {
-                    const update = { Ticket: ticket }
-                    ticketSchema.updateOne({ Guild: guildId }, update, { new: true })
-                        .then((result) => {
-                            if (result) {
-                                res.status(200).send({ message: "Update thành công" })
-                                // const key = `guildid:${result.GuildId}`;
-                                // const value = JSON.stringify(result.toObject());
-
-                                // client.set(key, value, (err, result) => {
-                                //     if (err) {
-                                //         console.error(err);
-                                //     }
-                                // });
-
-                            } else return res.status(404).send({ message: "Lỗi xảy ra" })
-                        })
-                } else return res.status(404).send({ message: "Not found" })
-            })
+        const updateResult = await ticketSchema.updateOne({ Guild: guildId }, { Ticket: ticket })
+        if (updateResult.nModified > 0) {
+            res.status(200).send({ message: "Ticket system updated successfully" })
+        } else {
+            res.status(404).send({ message: "Ticket system not found" })
+        }
     } catch (error) {
         console.error(error)
-        res.status(500).send("Internal Server Error")
+        res.status(500).send({ message: "Internal Server Error" })
     }
 })
 
-router.get('/:guildid', throttle, async (req, res) => {
+router.get('/:guildid', async (req, res) => {
     getDataById(req, res, ticketSchema)
 })
 
-router.delete('/:guildid', throttle, async (req, res) =>{
-    const guildId= req.params.guildid
-    ticketSchema.deleteMany({Guild: guildId}).then((err, data)=>{
-        res.status(200).send({message: 'Đã loại bỏ hệ thống ticket'})
-    })
+router.delete('/:guildid', async (req, res) =>{
+    const guildId = req.params.guildid
+    try {
+        const deleteResult = await ticketSchema.deleteMany({ Guild: guildId })
+        if (deleteResult.deletedCount > 0) {
+            res.status(200).send({ message: 'Ticket system deleted successfully' })
+        } else {
+            res.status(404).send({ message: 'Ticket system not found' })
+        }
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ message: "Internal Server Error" })
+    }
 })
+
+module.exports = router
