@@ -9,7 +9,9 @@ router.use(bodyParser.json())
 router.post('/', async (req, res) => {
     const { guildId, guildName, categoryId, categoryName, channelId, channelName, userId, userTag, messages } = req.body
     const now = new Date()
-    const timestamp = `${now.getHours()}:${now.getMinutes()} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`
+    const utcOffset = 7;
+    now.setUTCHours(now.getUTCHours() + utcOffset);
+    const timestamp = `${now.getUTCHours()}:${now.getUTCMinutes()} ${now.getUTCDate()}/${now.getUTCMonth() + 1}/${now.getUTCFullYear()}`;
     const content = {
         userId: userId,
         userTag: userTag,
@@ -30,7 +32,7 @@ router.post('/', async (req, res) => {
         } else {
             await conversationSchema.updateOne(
                 { 'Guild.guildId': guildId, 'Category.categoryId': categoryId, 'Channel.channelId': channelId },
-                { $push: { 'Channel.content': content } }
+                { $push: { 'Channel.content': {$each: [content], $position: 0} } }
             )
             return res.status(200).send({ message: "Update thành công" })
         }
@@ -42,7 +44,7 @@ router.post('/', async (req, res) => {
 
 router.get('/getall', throttle, async (req, res) => {
     try {
-        const data = await conversationSchema.find()
+        const data = await conversationSchema.find().sort({createdAt: -1})
         if (data) {
             res.status(200).send(data)
         } else {

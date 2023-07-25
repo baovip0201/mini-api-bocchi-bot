@@ -16,7 +16,7 @@ let conversationLog = new Schema({
             userId: { type: String},
             userTag: { type: String},
             message: { type: String},
-            timetamp: {type: String}
+            timestamp: { type: String },
         }]
     }
 }, {versionKey: false})
